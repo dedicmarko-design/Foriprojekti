@@ -285,6 +285,28 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
 </style>
 </head>
 <body>
+
+<div id="pinGate" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--paper);
+  background-image:linear-gradient(var(--paper-line) 1px, transparent 1px),linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+  background-size:28px 28px;">
+  <div style="background:#fff;border:1.5px solid var(--teal-800);padding:36px 40px;max-width:340px;width:90%;position:relative;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:1.1rem;color:var(--teal-900);margin-bottom:6px;">
+      FORI — PREGLED PO PROJEKTIH
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--ink-soft);margin-bottom:20px;">
+      Vnesi PIN kodo za dostop
+    </div>
+    <input type="password" id="pinInput" inputmode="numeric" maxlength="12" placeholder="PIN"
+      style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:1.1rem;letter-spacing:4px;text-align:center;
+      padding:10px;border:1px solid var(--paper-line);margin-bottom:14px;box-sizing:border-box;">
+    <button id="pinSubmit" class="load-btn" style="width:100%;background:var(--teal-700);border-color:var(--teal-800);">Vstopi</button>
+    <div id="pinError" style="display:none;color:var(--red);font-family:'IBM Plex Mono',monospace;font-size:0.72rem;margin-top:10px;">
+      Napačen PIN — poskusi znova.
+    </div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
 <div class="sheet">
 
   <div class="titleblock">
@@ -416,6 +438,7 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
   </div>
 
 </div>
+</div><!-- /appRoot -->
 
 <script>
 const MONTHS = ['Januar','Februar','Marec','April','Maj','Junij','Julij','Avgust','September','Oktober','November','December'];
@@ -799,7 +822,7 @@ document.getElementById('gsRefreshBtn').addEventListener('click', ()=>fetchGoogl
 
 // on load: hardcoded defaults always win over anything saved from a previous
 // version of this file; only a manual save made on THIS version overrides them.
-(function initGoogleSheets(){
+function initGoogleSheets(){
   let savedV = '', savedP = '';
   try{
     savedV = localStorage.getItem(GS_KEY_VELENJE) || '';
@@ -812,20 +835,63 @@ document.getElementById('gsRefreshBtn').addEventListener('click', ()=>fetchGoogl
   if(uV || uP){
     fetchGoogleSheets(false);
   }
-})();
-
-document.getElementById('footerDate').textContent = 'Generirano: ' + new Date().toLocaleDateString('sl-SI');
+}
 
 window.addEventListener('error', function(ev){
   const s = document.getElementById('loadStatus');
   if(s) s.textContent = 'Napaka na strani: ' + ev.message;
 });
 
-try{
-  renderAll();
-}catch(err){
-  document.getElementById('loadStatus').textContent = 'Napaka pri prikazu grafov: ' + err.message;
+// Everything above only wires up buttons/listeners (cheap, no data loaded yet).
+// The actual app start — rendering charts and fetching Google Sheets data —
+// is gated behind the PIN screen below, so nothing loads before entry.
+function startApp(){
+  document.getElementById('footerDate').textContent = 'Generirano: ' + new Date().toLocaleDateString('sl-SI');
+  try{
+    renderAll();
+  }catch(err){
+    document.getElementById('loadStatus').textContent = 'Napaka pri prikazu grafov: ' + err.message;
+  }
+  initGoogleSheets();
 }
+
+// ---- PIN gate ----
+// NOTE: this is a light deterrent, not real security — anyone who views this
+// page's source (Ctrl+U) can read ACCESS_PIN in plain text. It keeps casual
+// visitors out; it does not protect against someone deliberately targeting it.
+const ACCESS_PIN = '4820';
+const PIN_KEY = 'fori_projekti_pin_ok_v1';
+
+function unlockApp(){
+  document.getElementById('pinGate').style.display = 'none';
+  document.getElementById('appRoot').style.display = '';
+  startApp();
+}
+
+(function initPinGate(){
+  let ok = false;
+  try{ ok = localStorage.getItem(PIN_KEY) === '1'; }catch(e){}
+  if(ok){
+    unlockApp();
+    return;
+  }
+  document.getElementById('pinSubmit').addEventListener('click', tryPin);
+  document.getElementById('pinInput').addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter') tryPin();
+  });
+  function tryPin(){
+    const val = document.getElementById('pinInput').value.trim();
+    if(val === ACCESS_PIN){
+      try{ localStorage.setItem(PIN_KEY, '1'); }catch(e){}
+      unlockApp();
+    } else {
+      document.getElementById('pinError').style.display = 'block';
+      document.getElementById('pinInput').value = '';
+      document.getElementById('pinInput').focus();
+    }
+  }
+  document.getElementById('pinInput').focus();
+})();
 </script>
 </body>
 </html>
