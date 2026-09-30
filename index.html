@@ -386,19 +386,24 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
     </div>
 
     <div class="chart-block">
-      <h3>REALIZACIJA — lastna vs. prodajna cena (EUR/mesec)</h3>
+      <h3>PRODAJA / STROŠKI T3 / MARŽA (EUR/mesec)</h3>
       <div class="chart-wrap tall"><canvas id="chartRealizacija"></canvas></div>
     </div>
 
     <div class="chart-grid">
       <div class="chart-block">
-        <h3>STROŠKI — plače / energenti / T1 (EUR/mesec)</h3>
+        <h3>STROŠKI T3 (plače + energenti + T1: material/interno) — EUR/mesec</h3>
         <div class="chart-wrap"><canvas id="chartStroski"></canvas></div>
       </div>
       <div class="chart-block">
         <h3>ŠTEVILO DELAVCEV (mesečno)</h3>
         <div class="chart-wrap"><canvas id="chartDelavci"></canvas></div>
       </div>
+    </div>
+
+    <div class="chart-block">
+      <h3>PRODAJA/URE IN MARŽA/URE (EUR/h, mesečno)</h3>
+      <div class="chart-wrap tall"><canvas id="chartUre"></canvas></div>
     </div>
   </div>
 
@@ -428,6 +433,9 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
       <div class="project-picker" id="projPicker"></div>
       <div class="kpi-row" id="projKpiRow"></div>
       <div class="chart-wrap tall"><canvas id="chartProjDetail"></canvas></div>
+      <h3 style="margin-top:18px;">REALIZACIJA/URE IN MARŽA/URE (EUR/h, mesečno)</h3>
+      <div class="note">Ure = število delavcev × 174 (povprečne ure/mesec) — ocena, ker dejanske ure po projektih niso vodene posebej.</div>
+      <div class="chart-wrap tall"><canvas id="chartProjUre"></canvas></div>
     </div>
 
   </div>
@@ -458,7 +466,9 @@ let velenjeData = {
   energenti:[10509.45,10297.39,9169.43,8418.49,6272.65,6340.00,6455.00,5747.00,null,null,null,null],
   t1:       [65514.19,76937.29,87933.02,102131.61,92380.71,80220.83,123556.00,129415.04,null,null,null,null],
   t3:       [120134.14,130368.68,146903.95,156897.10,151037.86,148132.83,208005.00,204388.54,null,null,null,null],
-  delavci:  [25,26,27,29,32,37,43,42,null,null,null,null]
+  delavci:  [25,26,27,29,32,37,43,42,null,null,null,null],
+  prodajaUre:[43.98,42.98,42.73,53.49,42.43,26.63,41.00,36.20,null,null,null,null],
+  marzaUre:  [12.84,8.78,9.34,16.50,10.94,0.59,12.19,5.20,null,null,null,null]
 };
 
 // projekti: month -> project -> {realizacija, stroski, delavci}  (vneseno iz FORI_projekti_podatki.xlsx, jan-avg 2026)
@@ -482,12 +492,18 @@ function renderVelenje(){
   document.getElementById('kpi-marza-ytd').textContent = fmtEUR(marza);
   document.getElementById('kpi-delavci-avg').textContent = fmtNum(avgArr(velenjeData.delavci));
 
+  const marzaMesecno = velenjeData.prodajna.map((p,i)=>{
+    const t3 = velenjeData.t3[i];
+    return (p===null||p===undefined||t3===null||t3===undefined) ? null : p - t3;
+  });
+
   destroyChart('real');
   charts.real = new Chart(document.getElementById('chartRealizacija'), {
     type:'bar',
     data:{ labels:MONTHS, datasets:[
-      {label:'Lastna cena', data:velenjeData.lastna, backgroundColor:'#4db3ab'},
-      {label:'Prodajna cena', data:velenjeData.prodajna, backgroundColor:'#154c49'}
+      {label:'Prodaja', data:velenjeData.prodajna, backgroundColor:'#154c49'},
+      {label:'Stroški T3', data:velenjeData.t3, backgroundColor:'#b1483f'},
+      {label:'Marža', data:marzaMesecno, backgroundColor:'#4db3ab'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:11}}}},
@@ -515,6 +531,18 @@ function renderVelenje(){
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
+  });
+
+  destroyChart('ure');
+  charts.ure = new Chart(document.getElementById('chartUre'), {
+    type:'bar',
+    data:{ labels:MONTHS, datasets:[
+      {label:'Prodaja/ure (EUR/h)', data:velenjeData.prodajaUre, backgroundColor:'#154c49'},
+      {label:'Marža/ure (EUR/h)', data:velenjeData.marzaUre, backgroundColor:'#4db3ab'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
       scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 }
@@ -577,6 +605,8 @@ function renderProjPicker(){
     el.appendChild(btn);
   });
 }
+const URE_NA_DELAVCA_MESEC = 174; // povprečne ure/mesec na delavca (ocena)
+
 function renderProjDetail(){
   const p = activeProject;
   const real = projMonthly(p,'realizacija');
@@ -586,11 +616,25 @@ function renderProjDetail(){
   const stroYtd = sumArr(stro);
   const marza = realYtd - stroYtd;
 
+  // ure = delavci × 174 ur/mesec; realizacija/ure in marža/ure po mesecih
+  const ureRow = delRow.map(d => (d===null||d===undefined) ? null : d * URE_NA_DELAVCA_MESEC);
+  const realUre = real.map((r,i) => (ureRow[i] ? r/ureRow[i] : null));
+  const marzaMesecnoProj = real.map((r,i) => {
+    const s = stro[i];
+    return (r===null||s===null||s===undefined) ? null : r - s;
+  });
+  const marzaUreRow = marzaMesecnoProj.map((m,i) => (ureRow[i] ? m/ureRow[i] : null));
+  const sumUreYtd = sumArr(ureRow);
+  const povpRealUre = sumUreYtd ? realYtd / sumUreYtd : null;
+  const povpMarzaUre = sumUreYtd ? marza / sumUreYtd : null;
+
   document.getElementById('projKpiRow').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">REALIZACIJA YTD</div><div class="kpi-value small">${fmtEUR(realYtd)}</div></div>
     <div class="kpi-card"><div class="kpi-label">STROŠKI YTD</div><div class="kpi-value small">${fmtEUR(stroYtd)}</div></div>
     <div class="kpi-card"><div class="kpi-label">MARŽA YTD</div><div class="kpi-value small">${fmtEUR(marza)}</div></div>
     <div class="kpi-card"><div class="kpi-label">POVP. DELAVCEV</div><div class="kpi-value small">${fmtNum(avgArr(delRow))}</div></div>
+    <div class="kpi-card"><div class="kpi-label">POVP. REALIZACIJA/URO</div><div class="kpi-value small">${povpRealUre===null?'–':povpRealUre.toFixed(1)+' €/h'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">POVP. MARŽA/URO</div><div class="kpi-value small">${povpMarzaUre===null?'–':povpMarzaUre.toFixed(1)+' €/h'}</div></div>
   `;
 
   destroyChart('detail');
@@ -607,6 +651,18 @@ function renderProjDetail(){
         y:{ticks:{font:{family:'IBM Plex Mono',size:10}}},
         y1:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{family:'IBM Plex Mono',size:10}}}
       } }
+  });
+
+  destroyChart('projUre');
+  charts.projUre = new Chart(document.getElementById('chartProjUre'), {
+    type:'bar',
+    data:{ labels:MONTHS, datasets:[
+      {label:'Realizacija/ure (EUR/h)', data:realUre, backgroundColor:PROJ_COLORS[p]},
+      {label:'Marža/ure (EUR/h)', data:marzaUreRow, backgroundColor:'#d8d3c4'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
+      scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 }
 
@@ -733,8 +789,8 @@ function applyVelenjeCSV(text){
   // rows[0] = header, rows[1..12] = months
   const map = {};
   rows.slice(1).forEach(r=>{ if(r && r[0]) map[r[0].trim()] = r; });
-  const newV = {lastna:[],prodajna:[],placa:[],energenti:[],t1:[],t3:[],delavci:[]};
-  MONTHS.forEach(m=>{
+  const newV = {lastna:[],prodajna:[],placa:[],energenti:[],t1:[],t3:[],delavci:[],prodajaUre:[],marzaUre:[]};
+  MONTHS.forEach((m,i)=>{
     const r = map[m];
     newV.lastna.push(r ? toNum(r[1]) : null);
     newV.prodajna.push(r ? toNum(r[2]) : null);
@@ -743,6 +799,12 @@ function applyVelenjeCSV(text){
     newV.t1.push(r ? toNum(r[5]) : null);
     newV.t3.push(r ? toNum(r[6]) : null);
     newV.delavci.push(r ? toNum(r[7]) : null);
+    // columns 9/10 (Prodaja/ure, Marža/ure) are optional — if the sheet doesn't
+    // have them yet, keep whatever value was already loaded for that month.
+    const prevPU = (velenjeData.prodajaUre && velenjeData.prodajaUre[i] !== undefined) ? velenjeData.prodajaUre[i] : null;
+    const prevMU = (velenjeData.marzaUre && velenjeData.marzaUre[i] !== undefined) ? velenjeData.marzaUre[i] : null;
+    newV.prodajaUre.push(r && r[8] !== undefined && r[8] !== '' ? toNum(r[8]) : prevPU);
+    newV.marzaUre.push(r && r[9] !== undefined && r[9] !== '' ? toNum(r[9]) : prevMU);
   });
   velenjeData = newV;
 }
