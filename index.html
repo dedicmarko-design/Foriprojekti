@@ -429,13 +429,11 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
     </div>
 
     <div class="chart-block">
-      <h3>PODROBNO PO PROJEKTU</h3>
+      <h3>PODROBNO PO PROJEKTU — realizacija, stroški, delavci, EUR/uro</h3>
       <div class="project-picker" id="projPicker"></div>
       <div class="kpi-row" id="projKpiRow"></div>
-      <div class="chart-wrap tall"><canvas id="chartProjDetail"></canvas></div>
-      <h3 style="margin-top:18px;">REALIZACIJA/URE IN MARŽA/URE (EUR/h, mesečno)</h3>
-      <div class="note">Ure = število delavcev × 174 (povprečne ure/mesec) — ocena, ker dejanske ure po projektih niso vodene posebej.</div>
-      <div class="chart-wrap tall"><canvas id="chartProjUre"></canvas></div>
+      <div class="note">Ure = število delavcev × 174 (povprečne ure/mesec) — ocena, ker dejanske ure po projektih niso vodene posebej. Stolpci = EUR (leva os), črti (Delavci) = desna os, pikčasti črti (EUR/uro) = skrajno desna os.</div>
+      <div class="chart-wrap" style="height:420px;"><canvas id="chartProjDetail"></canvas></div>
     </div>
 
   </div>
@@ -640,29 +638,20 @@ function renderProjDetail(){
   destroyChart('detail');
   charts.detail = new Chart(document.getElementById('chartProjDetail'), {
     data:{ labels:MONTHS, datasets:[
-      {type:'bar', label:'Realizacija', data:real, backgroundColor:PROJ_COLORS[p], order:2},
-      {type:'bar', label:'Stroški', data:stro, backgroundColor:'#d8d3c4', order:3},
-      {type:'line', label:'Delavci', data:delRow, borderColor:'#1b2523', yAxisID:'y1', tension:0.25, order:1}
+      {type:'bar', label:'Realizacija (EUR)', data:real, backgroundColor:PROJ_COLORS[p], order:4, yAxisID:'y'},
+      {type:'bar', label:'Stroški (EUR)', data:stro, backgroundColor:'#d8d3c4', order:5, yAxisID:'y'},
+      {type:'line', label:'Delavci', data:delRow, borderColor:'#1b2523', backgroundColor:'#1b2523', yAxisID:'y1', tension:0.25, order:1, borderWidth:2},
+      {type:'line', label:'Realizacija/uro (EUR/h)', data:realUre, borderColor:'#c98a2c', backgroundColor:'#c98a2c', yAxisID:'y2', tension:0.25, order:2, borderDash:[5,3], borderWidth:2, pointRadius:3},
+      {type:'line', label:'Marža/uro (EUR/h)', data:marzaUreRow, borderColor:'#b1483f', backgroundColor:'#b1483f', yAxisID:'y2', tension:0.25, order:3, borderDash:[2,2], borderWidth:2, pointRadius:3}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:9},boxWidth:14}}},
       scales:{
         x:{ticks:{font:{family:'IBM Plex Mono',size:9}}},
-        y:{ticks:{font:{family:'IBM Plex Mono',size:10}}},
-        y1:{position:'right',grid:{drawOnChartArea:false},ticks:{font:{family:'IBM Plex Mono',size:10}}}
+        y:{position:'left',title:{display:true,text:'EUR',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}},
+        y1:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Delavci',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}},
+        y2:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'EUR/h',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}}
       } }
-  });
-
-  destroyChart('projUre');
-  charts.projUre = new Chart(document.getElementById('chartProjUre'), {
-    type:'bar',
-    data:{ labels:MONTHS, datasets:[
-      {label:'Realizacija/ure (EUR/h)', data:realUre, backgroundColor:PROJ_COLORS[p]},
-      {label:'Marža/ure (EUR/h)', data:marzaUreRow, backgroundColor:'#d8d3c4'}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
-      scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 }
 
