@@ -584,7 +584,7 @@ function renderVelenje(){
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:9},boxWidth:12}}},
-      scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
+      scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{beginAtZero:true,ticks:{font:{family:'IBM Plex Mono',size:10},precision:0}} } }
   });
 
   destroyChart('ure');
@@ -771,8 +771,8 @@ function renderProjDetail(){
       scales:{
         x:{ticks:{font:{family:'IBM Plex Mono',size:9}}},
         y:{position:'left',title:{display:true,text:'EUR',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}},
-        y1:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Delavci',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}},
-        y2:{position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'EUR/h',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}}
+        y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'Delavci',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}},
+        y2:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'EUR/h',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}}
       } }
   });
 }
