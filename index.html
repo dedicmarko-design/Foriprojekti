@@ -331,7 +331,7 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
       <button class="tab-btn" data-tab="kontrola">KONTROLA</button>
     </div>
     <div class="load-group">
-      <span id="loadStatus">Prikazani podatki: Velenje + projekti, jan–avg 2026 (stanje 22.9.2026). Za posodobitev naloži nov Excel.</span>
+      <span id="loadStatus">Prikazani vgrajeni podatki. Povezujem z Google Sheets …</span>
       <button class="load-btn" id="gsToggleBtn" style="background:var(--teal-600);border-color:var(--teal-800);">Google Sheets</button>
       <button class="load-btn" onclick="document.getElementById('fileInput').click()">Naloži Excel</button>
       <input type="file" id="fileInput" accept=".xlsx,.xls">
@@ -367,22 +367,22 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
       <div class="kpi-card">
         <div class="kpi-label">REALIZACIJA PRODAJNA YTD</div>
         <div class="kpi-value" id="kpi-real-ytd">–</div>
-        <div class="kpi-sub" id="kpi-real-sub">EUR, jan–avg 2026</div>
+        <div class="kpi-sub" id="kpi-real-sub">EUR, <span class="obdobje"></span></div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">SKUPAJ STROŠKI T3 YTD</div>
         <div class="kpi-value" id="kpi-stroski-ytd">–</div>
-        <div class="kpi-sub">EUR (material + interno + plače + energenti)</div>
+        <div class="kpi-sub"><span class="obdobje"></span> · material + interno + plače + energenti</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">MARŽA (PRODAJNA − T3)</div>
         <div class="kpi-value" id="kpi-marza-ytd">–</div>
-        <div class="kpi-sub" id="kpi-marza-sub">EUR</div>
+        <div class="kpi-sub" id="kpi-marza-sub">EUR, <span class="obdobje"></span></div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">POVPREČNO ŠT. DELAVCEV</div>
         <div class="kpi-value" id="kpi-delavci-avg">–</div>
-        <div class="kpi-sub">jan–avg 2026</div>
+        <div class="kpi-sub"><span class="obdobje-del"></span></div>
       </div>
     </div>
 
@@ -412,7 +412,7 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
   <!-- ============ PANEL: PO PROJEKTIH ============ -->
   <div class="panel" id="panel-projekti">
 
-    <div class="note">Podatki na tem zavihku so ročni vnos (list "Projekti_vnos" v FORI_projekti_podatki.xlsx), stanje jan–avg 2026. Stroški po projektih še niso vneseni (0 €). Za posodobitev naloži novo izpolnjeno datoteko z gumbom "Naloži Excel".</div>
+    <div class="note">Podatki na tem zavihku so ročni vnos (list "Projekti_vnos" v Google Sheets), obdobje <span class="obdobje-proj"></span>.</div>
 
     <div class="chart-grid">
       <div class="chart-block">
@@ -777,7 +777,30 @@ function renderProjDetail(){
   });
 }
 
+
+// Obdobje se določi iz podatkov: od prvega do zadnjega meseca, ki ima vnesene podatke.
+const MES_KRATKO = ['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'];
+function obdobjeIz(arrays){
+  let first=-1, last=-1;
+  MONTHS.forEach((m,i)=>{
+    const has = arrays.some(a => a && a[i]!==null && a[i]!==undefined && a[i]!=='');
+    if(has){ if(first<0) first=i; last=i; }
+  });
+  if(first<0) return '–';
+  return (first===last ? MES_KRATKO[first] : MES_KRATKO[first]+'–'+MES_KRATKO[last]) + ' 2026';
+}
+function renderObdobje(){
+  const vel = obdobjeIz([velenjeData.prodajna, velenjeData.t3, velenjeData.delavci]);
+  document.querySelectorAll('.obdobje').forEach(el => el.textContent = vel);
+  const del = obdobjeIz([velenjeData.delavci]);
+  document.querySelectorAll('.obdobje-del').forEach(el => el.textContent = del);
+  const projArrays = [];
+  PROJECTS.forEach(p => ['realizacija','stroski','delavci'].forEach(f => projArrays.push(projMonthly(p,f))));
+  const pr = obdobjeIz(projArrays);
+  document.querySelectorAll('.obdobje-proj').forEach(el => el.textContent = pr);
+}
 function renderAll(){
+  renderObdobje();
   renderVelenje();
   renderProjektiOverview();
   renderKontrola();
