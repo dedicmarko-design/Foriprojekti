@@ -836,7 +836,10 @@ document.getElementById('fileInput').addEventListener('change', function(e){
         const rows = XLSX.utils.sheet_to_json(wb.Sheets['Projekti_vnos'], {header:1, range:2});
         const newP = {};
         MONTHS.forEach(m=>{ newP[m]={}; PROJECTS.forEach(p=>{ newP[m][p]={realizacija:0,stroski:0,delavci:0}; }); });
+        let stopX = false;
         rows.forEach(r=>{
+          if(stopX) return;
+          if(r && r[0] && String(r[0]).trim().toUpperCase().startsWith('PRIMER')){ stopX = true; return; }
           if(!r || !r[0] || !r[1]) return;
           const mesec = String(r[0]).trim();
           const proj = String(r[1]).trim();
@@ -924,7 +927,10 @@ function applyProjektiCSV(text){
   // from a genuine 0 the user typed in, so averages/charts don't treat an
   // empty cell as "zero cost" or "zero workers" for that month.
   MONTHS.forEach(m=>{ newP[m]={}; PROJECTS.forEach(p=>{ newP[m][p]={realizacija:null,stroski:null,delavci:null}; }); });
+  let stop = false; // vse od vrstice 'PRIMER' naprej je samo vzorec/legenda
   rows.slice(1).forEach(r=>{
+    if(stop) return;
+    if(r && r[0] && String(r[0]).trim().toUpperCase().startsWith('PRIMER')){ stop = true; return; }
     if(!r || !r[0] || !r[1]) return;
     const mesec = r[0].trim();
     const proj = r[1].trim();
