@@ -438,7 +438,7 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
   <!-- ============ PANEL: KONTROLA ============ -->
   <div class="panel" id="panel-kontrola">
 
-    <div class="note">Primerja uradno realizacijo Velenja (list "Velenje_skupaj") z vsoto ročno vnesenih projektov (list "Projekti_vnos"), po mesecih — pomaga najti mesec, kjer je pri vnosu prišlo do napake ali podvajanja.</div>
+    <div class="note">Nerazporejeno = realizacija Velenja minus vsota vpisanih projektov. Pozitivna vrednost je normalna (ostali kupci, ki niso med 4 projekti). <b>Rdeča / negativna</b> vrednost pomeni, da je na projekte vpisano več, kot je bilo realizacije — verjetna napaka pri vnosu (napačen mesec ali podvojen znesek).</div>
 
     <div class="chart-block">
       <h3>YTD POVZETEK</h3>
@@ -446,7 +446,7 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
     </div>
 
     <div class="chart-block">
-      <h3>RAZLIKA PO MESECIH — vsota projektov minus Velenje skupaj (EUR)</h3>
+      <h3>NERAZPOREJENO PO MESECIH — Velenje skupaj minus vsota projektov (EUR)</h3>
       <div class="chart-wrap tall"><canvas id="chartKontrolaMesecno"></canvas></div>
     </div>
 
@@ -637,19 +637,23 @@ function renderProjektiOverview(){
 }
 
 function renderKontrola(){
-  const ytds = PROJECTS.map(p=>projYTD(p,'realizacija'));
-  const totalYtd = sumArr(ytds);
-  const velenjeTotalReal = sumArr(velenjeData.prodajna);
-  const projTotalReal = totalYtd;
-  const diff = projTotalReal - velenjeTotalReal;
+  // YTD primerjamo samo za mesece, ki imajo podatke pri Velenju IN pri projektih
+  let velenjeTotalReal=0, projTotalReal=0;
+  MONTHS.forEach((m,i)=>{
+    const v = velenjeData.prodajna[i];
+    const vals = PROJECTS.map(p => projMonthly(p,'realizacija')[i]);
+    const pSum = sumArr(vals);
+    if(v!==null && v!==undefined && pSum>0){ velenjeTotalReal+=v; projTotalReal+=pSum; }
+  });
+  const diff = velenjeTotalReal - projTotalReal;
   const coverage = velenjeTotalReal>0 ? (projTotalReal/velenjeTotalReal*100) : 0;
-  const badgeClass = Math.abs(coverage-100)<=5 ? 'badge-ok' : 'badge-warn';
+  const badgeClass = coverage<=100 ? 'badge-ok' : 'badge-warn';
 
   document.getElementById('controlTableYtd').innerHTML = `
     <tr><th>Postavka</th><th class="num">Znesek (EUR)</th></tr>
-    <tr><td>Velenje — realizacija prodajna, skupaj 2026</td><td class="num">${fmtEUR(velenjeTotalReal)}</td></tr>
+    <tr><td>Velenje — realizacija prodajna (meseci s podatki na obeh straneh)</td><td class="num">${fmtEUR(velenjeTotalReal)}</td></tr>
     <tr><td>Vsota projektov — realizacija</td><td class="num">${fmtEUR(projTotalReal)}</td></tr>
-    <tr><td>Razlika (projekti − Velenje)</td><td class="num">${fmtEUR(diff)}</td></tr>
+    <tr><td>Nerazporejeno (Velenje − projekti) — ostali kupci / niso vpisani</td><td class="num ${diff<0?'badge-warn':''}">${fmtEUR(diff)}</td></tr>
     <tr><td>Pokritost projektov</td><td class="num ${badgeClass}">${coverage.toFixed(1)}%</td></tr>
   `;
 
@@ -662,15 +666,15 @@ function renderKontrola(){
   });
   const razlikaMesecno = MONTHS.map((m,i) => {
     const v = velMesecno[i], p = projMesecno[i];
-    return (v===null||v===undefined||p===null||p===undefined) ? null : p - v;
+    return (v===null||v===undefined||p===null||p===undefined) ? null : v - p;
   });
 
   destroyChart('kontrolaMesecno');
   charts.kontrolaMesecno = new Chart(document.getElementById('chartKontrolaMesecno'), {
     type:'bar',
     data:{ labels:MONTHS, datasets:[
-      {label:'Razlika (Projekti − Velenje)', data:razlikaMesecno,
-        backgroundColor: razlikaMesecno.map(v => v===null ? '#d8d3c4' : (Math.abs(v) > 20000 ? '#b1483f' : '#4db3ab'))}
+      {label:'Nerazporejeno (Velenje − projekti)', data:razlikaMesecno,
+        backgroundColor: razlikaMesecno.map(v => v===null ? '#d8d3c4' : (v < 0 ? '#b1483f' : '#4db3ab'))}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
@@ -678,12 +682,13 @@ function renderKontrola(){
       scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 
-  let rows = '<tr><th>Mesec</th><th class="num">Velenje (EUR)</th><th class="num">Projekti (EUR)</th><th class="num">Razlika (EUR)</th></tr>';
+  let rows = '<tr><th>Mesec</th><th class="num">Velenje (EUR)</th><th class="num">Projekti (EUR)</th><th class="num">Nerazporejeno (EUR)</th><th class="num">Pokritost</th></tr>';
   MONTHS.forEach((m,i)=>{
     const v = velMesecno[i], p = projMesecno[i], r = razlikaMesecno[i];
-    if(v===null && p===null) return;
-    const cls = (r===null) ? '' : (Math.abs(r) > 20000 ? 'badge-warn' : 'badge-ok');
-    rows += `<tr><td>${m}</td><td class="num">${fmtEUR(v)}</td><td class="num">${fmtEUR(p)}</td><td class="num ${cls}">${r===null?'–':fmtEUR(r)}</td></tr>`;
+    if((v===null||v===undefined) && (p===null||p===0)) return;
+    const cls = (r===null) ? '' : (r < 0 ? 'badge-warn' : '');
+    const pk = (v && p!==null) ? (p/v*100).toFixed(0)+' %' : '–';
+    rows += `<tr><td>${m}</td><td class="num">${fmtEUR(v)}</td><td class="num">${fmtEUR(p)}</td><td class="num ${cls}">${r===null?'–':fmtEUR(r)}</td><td class="num">${pk}</td></tr>`;
   });
   document.getElementById('controlTableMesecno').innerHTML = rows;
 }
