@@ -328,6 +328,7 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
     <div class="tabs">
       <button class="tab-btn active" data-tab="velenje">VELENJE — SKUPAJ</button>
       <button class="tab-btn" data-tab="projekti">PO PROJEKTIH</button>
+      <button class="tab-btn" data-tab="kontrola">KONTROLA</button>
     </div>
     <div class="load-group">
       <span id="loadStatus">Prikazani podatki: Velenje + projekti, jan–avg 2026 (stanje 22.9.2026). Za posodobitev naloži nov Excel.</span>
@@ -424,16 +425,33 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
     </div>
 
     <div class="chart-block">
-      <h3>KONTROLA: vsota projektov vs. Velenje skupaj</h3>
-      <table class="data-table" id="controlTable"></table>
-    </div>
-
-    <div class="chart-block">
       <h3>PODROBNO PO PROJEKTU — realizacija, stroški, delavci, EUR/uro</h3>
       <div class="project-picker" id="projPicker"></div>
       <div class="kpi-row" id="projKpiRow"></div>
       <div class="note">Ure = število delavcev × 174 (povprečne ure/mesec) — ocena, ker dejanske ure po projektih niso vodene posebej. Stolpci = EUR (leva os), črti (Delavci) = desna os, pikčasti črti (EUR/uro) = skrajno desna os.</div>
       <div class="chart-wrap" style="height:420px;"><canvas id="chartProjDetail"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- ============ PANEL: KONTROLA ============ -->
+  <div class="panel" id="panel-kontrola">
+
+    <div class="note">Primerja uradno realizacijo Velenja (list "Velenje_skupaj") z vsoto ročno vnesenih projektov (list "Projekti_vnos"), po mesecih — pomaga najti mesec, kjer je pri vnosu prišlo do napake ali podvajanja.</div>
+
+    <div class="chart-block">
+      <h3>YTD POVZETEK</h3>
+      <table class="data-table" id="controlTableYtd"></table>
+    </div>
+
+    <div class="chart-block">
+      <h3>RAZLIKA PO MESECIH — vsota projektov minus Velenje skupaj (EUR)</h3>
+      <div class="chart-wrap tall"><canvas id="chartKontrolaMesecno"></canvas></div>
+    </div>
+
+    <div class="chart-block">
+      <h3>PODROBNO PO MESECIH</h3>
+      <table class="data-table" id="controlTableMesecno"></table>
     </div>
 
   </div>
@@ -579,19 +597,58 @@ function renderProjektiOverview(){
         tooltip:{ callbacks:{ label: ctx => totalYtd>0 ? `${ctx.label}: ${fmtEUR(ctx.raw)}` : 'ni podatkov' } } } }
   });
 
-  // control table
+}
+
+function renderKontrola(){
+  const ytds = PROJECTS.map(p=>projYTD(p,'realizacija'));
+  const totalYtd = sumArr(ytds);
   const velenjeTotalReal = sumArr(velenjeData.prodajna);
   const projTotalReal = totalYtd;
-  const diff = velenjeTotalReal - projTotalReal;
+  const diff = projTotalReal - velenjeTotalReal;
   const coverage = velenjeTotalReal>0 ? (projTotalReal/velenjeTotalReal*100) : 0;
-  const badgeClass = coverage>=95 ? 'badge-ok' : 'badge-warn';
-  document.getElementById('controlTable').innerHTML = `
+  const badgeClass = Math.abs(coverage-100)<=5 ? 'badge-ok' : 'badge-warn';
+
+  document.getElementById('controlTableYtd').innerHTML = `
     <tr><th>Postavka</th><th class="num">Znesek (EUR)</th></tr>
     <tr><td>Velenje — realizacija prodajna, skupaj 2026</td><td class="num">${fmtEUR(velenjeTotalReal)}</td></tr>
     <tr><td>Vsota projektov — realizacija</td><td class="num">${fmtEUR(projTotalReal)}</td></tr>
-    <tr><td>Razlika (nerazporejeno / režija)</td><td class="num">${fmtEUR(diff)}</td></tr>
+    <tr><td>Razlika (projekti − Velenje)</td><td class="num">${fmtEUR(diff)}</td></tr>
     <tr><td>Pokritost projektov</td><td class="num ${badgeClass}">${coverage.toFixed(1)}%</td></tr>
   `;
+
+  // monthly breakdown: Velenje prodajna vs sum of all projects' realizacija, per month
+  const velMesecno = velenjeData.prodajna;
+  const projMesecno = MONTHS.map((m,i) => {
+    const vals = PROJECTS.map(p => projMonthly(p,'realizacija')[i]);
+    const allNull = vals.every(v => v===null || v===undefined);
+    return allNull ? null : sumArr(vals);
+  });
+  const razlikaMesecno = MONTHS.map((m,i) => {
+    const v = velMesecno[i], p = projMesecno[i];
+    return (v===null||v===undefined||p===null||p===undefined) ? null : p - v;
+  });
+
+  destroyChart('kontrolaMesecno');
+  charts.kontrolaMesecno = new Chart(document.getElementById('chartKontrolaMesecno'), {
+    type:'bar',
+    data:{ labels:MONTHS, datasets:[
+      {label:'Razlika (Projekti − Velenje)', data:razlikaMesecno,
+        backgroundColor: razlikaMesecno.map(v => v===null ? '#d8d3c4' : (Math.abs(v) > 20000 ? '#b1483f' : '#4db3ab'))}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label: ctx => ctx.parsed.y===null ? 'ni podatkov' : fmtEUR(ctx.parsed.y)}}},
+      scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
+  });
+
+  let rows = '<tr><th>Mesec</th><th class="num">Velenje (EUR)</th><th class="num">Projekti (EUR)</th><th class="num">Razlika (EUR)</th></tr>';
+  MONTHS.forEach((m,i)=>{
+    const v = velMesecno[i], p = projMesecno[i], r = razlikaMesecno[i];
+    if(v===null && p===null) return;
+    const cls = (r===null) ? '' : (Math.abs(r) > 20000 ? 'badge-warn' : 'badge-ok');
+    rows += `<tr><td>${m}</td><td class="num">${fmtEUR(v)}</td><td class="num">${fmtEUR(p)}</td><td class="num ${cls}">${r===null?'–':fmtEUR(r)}</td></tr>`;
+  });
+  document.getElementById('controlTableMesecno').innerHTML = rows;
 }
 
 let activeProject = PROJECTS[0];
@@ -680,6 +737,7 @@ function renderProjDetail(){
 function renderAll(){
   renderVelenje();
   renderProjektiOverview();
+  renderKontrola();
   renderProjPicker();
   renderProjDetail();
 }
