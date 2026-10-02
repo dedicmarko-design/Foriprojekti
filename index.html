@@ -397,13 +397,14 @@ table.data-table tr:nth-child(even) td{background:#fafaf6;}
         <div class="chart-wrap"><canvas id="chartStroski"></canvas></div>
       </div>
       <div class="chart-block">
-        <h3>ŠTEVILO DELAVCEV (mesečno)</h3>
+        <h3>ŠTEVILO DELAVCEV — vsi / aktivni / v bolniški</h3>
         <div class="chart-wrap"><canvas id="chartDelavci"></canvas></div>
       </div>
     </div>
 
     <div class="chart-block">
       <h3>PRODAJA/URE IN MARŽA/URE (EUR/h, mesečno)</h3>
+      <div class="note">Ure = (delavci − bolniška) × 174 h. Marža = prodaja − stroški T3.</div>
       <div class="chart-wrap tall"><canvas id="chartUre"></canvas></div>
     </div>
   </div>
@@ -483,8 +484,7 @@ let velenjeData = {
   t1:       [65514.19,76937.29,87933.02,102131.61,92380.71,80220.83,123556.00,129415.04,null,null,null,null],
   t3:       [120134.14,130368.68,146903.95,156897.10,151037.86,148132.83,208005.00,204388.54,null,null,null,null],
   delavci:  [25,26,27,29,32,37,43,42,null,null,null,null],
-  // dejanske ure, ki jih Excel (list Velenje) uporablja kot imenovalec za AQ/AT
-  ure:       [3857,3812,4399,4242,4797,5688,7220,6593,null,null,null,null]
+  bolniska: [null,null,null,null,null,null,null,null,null,null,null,null]
 };
 
 // projekti: month -> project -> {realizacija, stroski, delavci}  (vneseno iz FORI_projekti_podatki.xlsx, jan-avg 2026)
@@ -512,15 +512,20 @@ const tealPalette = ['#1c6b66','#c98a2c','#5c6864','#b1483f'];
 
 // Prodaja/ure in marža/ure se računata sproti iz trenutne prodaje in T3,
 // zato se ob popravku podatkov v Google Sheets posodobita tudi €/uro.
-// Ure: dejanske ure (stolpec 9 'Ure (h)' v Velenje_skupaj, če obstaja),
-// sicer delavci × 174.
-function velenjeUreCalc(){
-  const ure = MONTHS.map((m,i)=>{
-    const u = velenjeData.ure ? velenjeData.ure[i] : null;
-    if(u) return u;
+// Ure = (delavci − bolniška) × 174.
+// aktivni delavci = vsi delavci − delavci v bolniški (stolpec I v Velenje_skupaj)
+function velenjeAktivni(){
+  return MONTHS.map((m,i)=>{
     const d = velenjeData.delavci[i];
-    return d ? d * URE_NA_DELAVCA_MESEC : null;
+    if(d===null || d===undefined) return null;
+    const b = (velenjeData.bolniska && velenjeData.bolniska[i]) ? velenjeData.bolniska[i] : 0;
+    return Math.max(d - b, 0);
   });
+}
+function velenjeUreCalc(){
+  // ure = (delavci − bolniška) × 174
+  const aktivni = velenjeAktivni();
+  const ure = aktivni.map(a => a ? a * URE_NA_DELAVCA_MESEC : null);
   const prodajaUre = MONTHS.map((m,i)=>{
     const P = velenjeData.prodajna[i];
     return (P===null||P===undefined||!ure[i]) ? null : P/ure[i];
@@ -573,10 +578,12 @@ function renderVelenje(){
   charts.delavci = new Chart(document.getElementById('chartDelavci'), {
     type:'line',
     data:{ labels:MONTHS, datasets:[
-      {label:'Št. delavcev', data:velenjeData.delavci, borderColor:'#154c49', backgroundColor:'#154c4933', fill:true, tension:0.25}
+      {type:'line', label:'Vsi delavci', data:velenjeData.delavci, borderColor:'#154c49', backgroundColor:'#154c4933', fill:true, tension:0.25, order:1},
+      {type:'line', label:'Aktivni (brez bolniške)', data:velenjeAktivni(), borderColor:'#c98a2c', backgroundColor:'#c98a2c', borderDash:[5,3], tension:0.25, order:2},
+      {type:'bar', label:'V bolniški', data:velenjeData.bolniska || [], backgroundColor:'#b1483f', order:3}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:9},boxWidth:12}}},
       scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 
@@ -809,7 +816,7 @@ document.getElementById('fileInput').addEventListener('change', function(e){
         // rows[0] = header, rows[1..12] = months
         const map = {};
         rows.slice(1,13).forEach(r=>{ if(r && r[0]) map[r[0]] = r; });
-        const newV = {lastna:[],prodajna:[],placa:[],energenti:[],t1:[],t3:[],delavci:[]};
+        const newV = {lastna:[],prodajna:[],placa:[],energenti:[],t1:[],t3:[],delavci:[],bolniska:[]};
         MONTHS.forEach(m=>{
           const r = map[m];
           newV.lastna.push(r && r[1]!==undefined ? Number(r[1]) : null);
@@ -819,6 +826,7 @@ document.getElementById('fileInput').addEventListener('change', function(e){
           newV.t1.push(r && r[5]!==undefined ? Number(r[5]) : null);
           newV.t3.push(r && r[6]!==undefined ? Number(r[6]) : null);
           newV.delavci.push(r && r[7]!==undefined ? Number(r[7]) : null);
+          newV.bolniska.push(r && r[8]!==undefined && r[8]!=='' ? Number(r[8]) : null);
         });
         velenjeData = newV;
         loadedVelenje = true;
@@ -894,7 +902,7 @@ function applyVelenjeCSV(text){
   // rows[0] = header, rows[1..12] = months
   const map = {};
   rows.slice(1).forEach(r=>{ if(r && r[0]) map[r[0].trim()] = r; });
-  const newV = {lastna:[],prodajna:[],placa:[],energenti:[],t1:[],t3:[],delavci:[],ure:[]};
+  const newV = {lastna:[],prodajna:[],placa:[],energenti:[],t1:[],t3:[],delavci:[],bolniska:[]};
   MONTHS.forEach((m,i)=>{
     const r = map[m];
     newV.lastna.push(r ? toNum(r[1]) : null);
@@ -904,8 +912,7 @@ function applyVelenjeCSV(text){
     newV.t1.push(r ? toNum(r[5]) : null);
     newV.t3.push(r ? toNum(r[6]) : null);
     newV.delavci.push(r ? toNum(r[7]) : null);
-    const prevU = (velenjeData.ure && velenjeData.ure[i]) ? velenjeData.ure[i] : null;
-    newV.ure.push(r && r[8] !== undefined && r[8] !== '' ? toNum(r[8]) : prevU);
+    newV.bolniska.push(r ? toNum(r[8]) : null); // stolpec I: Bolniška (št.)
   });
   velenjeData = newV;
 }
