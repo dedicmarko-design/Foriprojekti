@@ -320,17 +320,6 @@ body{background-image:none !important;}
 .print-proj .kpi-label{font-size:0.48rem !important;}
 .print-proj .chart-wrap{height:205px !important;}
 .footer{padding:6px 0 0 !important;font-size:0.58rem !important;}
-.print-table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.56rem;margin:2px 0 6px;}
-.print-table th{background:#0f3937;color:#fff;padding:2px 4px;text-align:right;font-weight:600;}
-.print-table th:first-child{text-align:left;}
-.print-table td{padding:2px 4px;text-align:right;border-bottom:1px solid #e4dfd0;}
-.print-table td:first-child{text-align:left;color:#444;}
-.print-table tr.strong td{font-weight:700;color:#0b2b2a;}
-.print-proj .chart-wrap{height:138px !important;}
-#panel-projekti .chart-wrap.tall{height:178px !important;}
-.print-proj{padding:6px 10px 2px !important;margin-bottom:8px !important;}
-.print-proj .kpi-card{padding:4px 6px 3px !important;}
-#printProjDetails > .chart-block{margin-bottom:2px !important;}
 </style>
 
 </head>
@@ -609,8 +598,8 @@ function renderVelenje(){
       {label:'Stroški T3', data:velenjeData.t3, backgroundColor:'#b1483f'},
       {label:'Marža', data:marzaMesecno, backgroundColor:'#4db3ab'}
     ]},
-    options:{layout:{padding:{top:_printing?20:0,right:_printing?4:0}},responsive:true,maintainAspectRatio:false,
-      plugins:{printLabels:{datasets:[{index:0,rotate:true,fmt:'k'},{index:1,rotate:true,fmt:'k',color:'#7a2a24'},{index:2,rotate:true,fmt:'k',color:'#1c6b66'}]},legend:{labels:{font:{family:'IBM Plex Mono',size:11}}}},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:11}}}},
       scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:10}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 
@@ -622,8 +611,8 @@ function renderVelenje(){
       {label:'Energenti', data:velenjeData.energenti, backgroundColor:'#b1483f', stack:'s'},
       {label:'T1 (material/interno)', data:velenjeData.t1, backgroundColor:'#5c6864', stack:'s'}
     ]},
-    options:{layout:{padding:{top:_printing?20:0,right:_printing?4:0}},responsive:true,maintainAspectRatio:false,
-      plugins:{printLabels:{datasets:[{index:0,pos:'inside',fmt:'k',color:'#fff',minH:11},{index:2,pos:'inside',fmt:'k',color:'#fff',minH:11}],totals:{fmt:'k',size:6.5}},legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
       scales:{ x:{stacked:true,ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{stacked:true,ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 
@@ -635,8 +624,8 @@ function renderVelenje(){
       {type:'line', label:'Aktivni (brez bolniške)', data:velenjeAktivni(), borderColor:'#c98a2c', backgroundColor:'#c98a2c', borderDash:[5,3], tension:0.25, order:2},
       {type:'bar', label:'V bolniški', data:velenjeData.bolniska || [], backgroundColor:'#b1483f', order:3}
     ]},
-    options:{layout:{padding:{top:_printing?20:0,right:_printing?4:0}},responsive:true,maintainAspectRatio:false,
-      plugins:{printLabels:{datasets:[{index:0,pos:'above',fmt:'int',size:7,weight:'700'},{index:2,pos:'above',fmt:'int',size:6.5,color:'#7a2a24',skipZero:true}]},legend:{labels:{font:{family:'IBM Plex Mono',size:9},boxWidth:12}}},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:9},boxWidth:12}}},
       scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{beginAtZero:true,ticks:{font:{family:'IBM Plex Mono',size:10},precision:0}} } }
   });
 
@@ -647,8 +636,8 @@ function renderVelenje(){
       {label:'Prodaja/ure (EUR/h)', data:velenjeUreCalc().prodajaUre, backgroundColor:'#154c49'},
       {label:'Marža/ure (EUR/h)', data:velenjeUreCalc().marzaUre, backgroundColor:'#4db3ab'}
     ]},
-    options:{layout:{padding:{top:_printing?20:0,right:_printing?4:0}},responsive:true,maintainAspectRatio:false,
-      plugins:{printLabels:{datasets:[{index:0,fmt:'h1',size:6.5},{index:1,fmt:'h1',size:6.5,color:'#1c6b66'}]},legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
       scales:{ x:{ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 }
@@ -670,8 +659,8 @@ function renderProjektiOverview(){
     data:{ labels:MONTHS, datasets:PROJECTS.map(p=>({
       label:p, data:projMonthly(p,'realizacija'), backgroundColor:PROJ_COLORS[p], stack:'s'
     }))},
-    options:{layout:{padding:{top:_printing?20:0,right:_printing?4:0}},responsive:true,maintainAspectRatio:false,
-      plugins:{printLabels:{datasets:[{index:0,pos:'inside',fmt:'k',color:'#fff',minH:9,size:6},{index:1,pos:'inside',fmt:'k',color:'#fff',minH:9,size:6},{index:2,pos:'inside',fmt:'k',color:'#fff',minH:9,size:6},{index:3,pos:'inside',fmt:'k',color:'#fff',minH:9,size:6}],totals:{fmt:'k',size:6.5}},legend:{labels:{font:{family:'IBM Plex Mono',size:_printing?7.5:10},boxWidth:_printing?9:40,padding:_printing?5:10}}},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'IBM Plex Mono',size:10}}}},
       scales:{ x:{stacked:true,ticks:{font:{family:'IBM Plex Mono',size:9}}}, y:{stacked:true,ticks:{font:{family:'IBM Plex Mono',size:10}}} } }
   });
 
@@ -683,7 +672,7 @@ function renderProjektiOverview(){
     data:{ labels:PROJECTS, datasets:[{ data: totalYtd>0 ? ytds : PROJECTS.map(()=>1),
       backgroundColor:PROJECTS.map(p=>PROJ_COLORS[p]) }] },
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{printLabels:{doughnut:true},legend:{position:'bottom',labels:{font:{family:'IBM Plex Mono',size:_printing?7.5:10},boxWidth:_printing?9:40,padding:_printing?5:10}},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'IBM Plex Mono',size:10}}},
         tooltip:{ callbacks:{ label: ctx => totalYtd>0 ? `${ctx.label}: ${fmtEUR(ctx.raw)}` : 'ni podatkov' } } } }
   });
 
@@ -836,7 +825,6 @@ function renderProjDetail(p, kpiEl, canvasEl, chartKey){
         y2:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'EUR/h',font:{family:'IBM Plex Mono',size:9}},ticks:{font:{family:'IBM Plex Mono',size:9}}}
       } }
   });
-  return {real, stro, delRow, realUre, marzaUreRow};
 }
 
 
@@ -1119,24 +1107,6 @@ function startApp(){
   initGoogleSheets();
 }
 
-
-function buildPrintTable(d, idx){
-  if(!idx || !idx.length) return '';
-  const num0 = v => (v===null||v===undefined) ? '–' : fmtNum0(v);
-  const num1 = v => (v===null||v===undefined) ? '–' : v.toFixed(1);
-  const marza = idx.map(i => (d.real[i]===null||d.stro[i]===null||d.stro[i]===undefined) ? null : d.real[i]-d.stro[i]);
-  let t = '<table class="print-table"><tr><th></th>' + idx.map(i=>'<th>'+MES_KRATKO[i]+'</th>').join('') + '</tr>';
-  const row = (lab, arr, f, cls) => '<tr class="'+(cls||'')+'"><td>'+lab+'</td>'+arr.map(v=>'<td>'+f(v)+'</td>').join('')+'</tr>';
-  t += row('Realizacija (EUR)', idx.map(i=>d.real[i]), num0, 'strong');
-  t += row('Stroški (EUR)', idx.map(i=>d.stro[i]), num0);
-  t += row('Marža (EUR)', marza, num0, 'strong');
-  t += row('Delavci', idx.map(i=>d.delRow[i]), v=>(v===null||v===undefined)?'–':String(v));
-  t += row('Realizacija/uro (EUR/h)', idx.map(i=>d.realUre[i]), num1);
-  t += row('Marža/uro (EUR/h)', idx.map(i=>d.marzaUreRow[i]), num1, 'strong');
-  return t + '</table>';
-}
-const fmtNum0 = v => fixMinus(Number(v).toLocaleString('sl-SI',{maximumFractionDigits:0,useGrouping:'always'}));
-
 // ---- Tisk poročila: Velenje + Po projektih (+ podrobno za vsak projekt), brez Kontrole ----
 let _printing = false;
 const _origAnim = Chart.defaults.animation;
@@ -1154,15 +1124,9 @@ function preparePrint(){
     box.appendChild(wrap);
   });
   renderAll();
-  const colIdx = [];
-  MONTHS.forEach((m,i)=>{
-    const has = PROJECTS.some(pp => ['realizacija','stroski','delavci'].some(f => { const v = projektiData[m][pp][f]; return v!==null && v!==undefined; }));
-    if(has) colIdx.push(i);
-  });
   PROJECTS.forEach((p,i)=>{
     const wrap = box.querySelectorAll('.print-proj')[i];
-    const dd = renderProjDetail(p, wrap.querySelector('.kpi-row'), wrap.querySelector('canvas'), 'print'+i);
-    wrap.insertAdjacentHTML('beforeend', buildPrintTable(dd, colIdx));
+    renderProjDetail(p, wrap.querySelector('.kpi-row'), wrap.querySelector('canvas'), 'print'+i);
   });
 }
 function cleanupPrint(){
@@ -1181,93 +1145,6 @@ function printReport(){
 window.addEventListener('afterprint', cleanupPrint);
 window.addEventListener('beforeprint', ()=>{ if(!_printing){ preparePrint(); } });
 document.getElementById('printBtn').addEventListener('click', printReport);
-
-
-// ---- Oznake vrednosti na grafih: SAMO pri tisku (na zaslonu ostanejo tooltipi) ----
-const PL_FMT = {
-  k:   v => (Math.abs(v)>=10000 ? Math.round(v/1000) : (v/1000).toFixed(1)) + 'k',
-  h1:  v => v.toFixed(1),
-  int: v => String(Math.round(v)),
-  pct: v => v.toFixed(0) + ' %'
-};
-const printLabelsPlugin = {
-  id:'printLabels',
-  afterDatasetsDraw(chart){
-    const cfg = chart.options.plugins && chart.options.plugins.printLabels;
-    if(!_printing || !cfg) return;
-    const ctx = chart.ctx;
-    ctx.save();
-    ctx.textBaseline = 'middle';
-    const font = (s,w)=> (w||'600')+' '+s+'px "IBM Plex Mono", monospace';
-
-    if(cfg.doughnut){
-      const ds = chart.data.datasets[0], meta = chart.getDatasetMeta(0);
-      const tot = ds.data.reduce((a,b)=>a+(b||0),0);
-      if(tot>0 && cfg.real!==false){
-        meta.data.forEach((arc,j)=>{
-          const v = ds.data[j]; if(!v) return;
-          const pr = arc.getCenterPoint();
-          ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
-          ctx.font = font(8,'700');
-          ctx.fillText((v/tot*100).toFixed(0)+' %', pr.x, pr.y-4);
-          ctx.font = font(6.5,'500');
-          ctx.fillText(PL_FMT.k(v), pr.x, pr.y+5);
-        });
-      }
-      ctx.restore(); return;
-    }
-
-    // vrednosti po stolpcih / točkah
-    (cfg.datasets||[]).forEach(spec=>{
-      const i = spec.index, ds = chart.data.datasets[i];
-      if(!ds || !chart.isDatasetVisible(i)) return;
-      const meta = chart.getDatasetMeta(i), fmt = PL_FMT[spec.fmt||'k'];
-      const size = spec.size || 6.5;
-      meta.data.forEach((el,j)=>{
-        const v = ds.data[j];
-        if(v===null || v===undefined || (spec.skipZero && !v)) return;
-        const txt = fmt(v);
-        ctx.font = font(size, spec.weight);
-        ctx.fillStyle = spec.color || '#1b2523';
-        if(spec.pos==='inside'){
-          const hgt = Math.abs((el.base!==undefined?el.base:el.y) - el.y);
-          if(hgt < (spec.minH||10)) return;
-          ctx.textAlign='center';
-          ctx.fillText(txt, el.x, (el.y + el.base)/2);
-        } else if(spec.rotate){
-          ctx.save();
-          ctx.translate(el.x, el.y-3);
-          ctx.rotate(-Math.PI/2);
-          ctx.textAlign='left';
-          ctx.fillText(txt,0,0);
-          ctx.restore();
-        } else {
-          ctx.textAlign='center';
-          ctx.fillText(txt, el.x, el.y + (spec.pos==='below' ? 7 : -6));
-        }
-      });
-    });
-
-    // seštevek na vrhu zloženih stolpcev
-    if(cfg.totals){
-      const t = cfg.totals, yScale = chart.scales.y;
-      const n = chart.data.labels.length;
-      for(let j=0;j<n;j++){
-        let sum=0, any=false, x=null;
-        chart.data.datasets.forEach((ds,i)=>{
-          if(!chart.isDatasetVisible(i)) return;
-          const v = ds.data[j];
-          if(v!==null && v!==undefined){ sum+=v; any=true; const el=chart.getDatasetMeta(i).data[j]; if(el) x=el.x; }
-        });
-        if(!any || !sum || x===null) continue;
-        ctx.font = font(t.size||7,'700'); ctx.fillStyle='#0b2b2a'; ctx.textAlign='center';
-        ctx.fillText(PL_FMT[t.fmt||'k'](sum), x, yScale.getPixelForValue(sum)-6);
-      }
-    }
-    ctx.restore();
-  }
-};
-Chart.register(printLabelsPlugin);
 
 // ---- PIN gate ----
 // NOTE: this is a light deterrent, not real security — anyone who views this
