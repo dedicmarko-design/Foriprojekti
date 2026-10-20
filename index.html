@@ -466,10 +466,10 @@ body{background-image:none !important;}
     </div>
 
     <div class="chart-block screen-detail">
-      <h3>PODROBNO PO PROJEKTU — realizacija, stroški, delavci, EUR/uro</h3>
+      <h3>PODROBNO PO PROJEKTU — realizacija, stroški, marža, delavci, EUR/uro</h3>
       <div class="project-picker" id="projPicker"></div>
       <div class="kpi-row" id="projKpiRow"></div>
-      <div class="note">Ure = število delavcev × 174 (povprečne ure/mesec) — ocena, ker dejanske ure po projektih niso vodene posebej. Stolpci = EUR (leva os), črti (Delavci) = desna os, pikčasti črti (EUR/uro) = skrajno desna os.</div>
+      <div class="note">Ure = število delavcev × 174 (povprečne ure/mesec) — ocena, ker dejanske ure po projektih niso vodene posebej. Stolpci (realizacija, stroški, marža) = EUR (leva os), črti (Delavci) = desna os, pikčasti črti (EUR/uro) = skrajno desna os.</div>
       <div class="chart-wrap" style="height:420px;"><canvas id="chartProjDetail"></canvas></div>
     </div>
 
@@ -793,6 +793,7 @@ function renderProjDetail(p, kpiEl, canvasEl, chartKey){
     data:{ labels:MONTHS, datasets:[
       {type:'bar', label:'Realizacija (EUR)', data:real, backgroundColor:PROJ_COLORS[p], order:4, yAxisID:'y'},
       {type:'bar', label:'Stroški (EUR)', data:stro, backgroundColor:'#d8d3c4', order:5, yAxisID:'y'},
+      {type:'bar', label:'Marža (EUR)', data:marzaMesecnoProj, backgroundColor:'#7fa83a', order:6, yAxisID:'y'},
       {type:'line', label:'Delavci', data:delRow, borderColor:'#1b2523', backgroundColor:'#1b2523', yAxisID:'y1', tension:0.25, order:1, borderWidth:2},
       {type:'line', label:'Realizacija/uro (EUR/h)', data:realUre, borderColor:'#c98a2c', backgroundColor:'#c98a2c', yAxisID:'y2', tension:0.25, order:2, borderDash:[5,3], borderWidth:2, pointRadius:3},
       {type:'line', label:'Marža/uro (EUR/h)', data:marzaUreRow, borderColor:'#b1483f', backgroundColor:'#b1483f', yAxisID:'y2', tension:0.25, order:3, borderDash:[2,2], borderWidth:2, pointRadius:3}
@@ -1116,7 +1117,7 @@ function preparePrint(){
   document.getElementById('printStyle').media = 'all';
   Chart.defaults.animation = false;
   const box = document.getElementById('printProjDetails');
-  box.innerHTML = '<div class="chart-block" style="border:none;padding:0;margin:0 0 6px;"><h3 style="margin:0;">PODROBNO PO PROJEKTIH — realizacija, stroški, delavci, EUR/uro</h3><div class="note">Ure = število delavcev × 174 h (ocena). Stolpci = EUR (leva os), črna črta = delavci, pikčasti črti = EUR/uro (desna os).</div></div>';
+  box.innerHTML = '<div class="chart-block" style="border:none;padding:0;margin:0 0 6px;"><h3 style="margin:0;">PODROBNO PO PROJEKTIH — realizacija, stroški, marža, delavci, EUR/uro</h3><div class="note">Ure = število delavcev × 174 h (ocena). Stolpci (realizacija, stroški, marža) = EUR (leva os), črna črta = delavci, pikčasti črti = EUR/uro (desna os).</div></div>';
   PROJECTS.forEach(p=>{
     const wrap = document.createElement('div');
     wrap.className = 'print-proj';
